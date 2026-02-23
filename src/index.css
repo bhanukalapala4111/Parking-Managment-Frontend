@@ -6,7 +6,7 @@
   --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
   --success-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
   --danger-gradient: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-  
+
   --primary: #667eea;
   --primary-dark: #5568d3;
   --secondary: #764ba2;
@@ -14,36 +14,36 @@
   --danger: #f5576c;
   --warning: #ffd93d;
   --info: #4facfe;
-  
+
   --bg-primary: #0f0f23;
   --bg-secondary: #1a1a2e;
   --bg-tertiary: #16213e;
   --bg-card: rgba(255, 255, 255, 0.05);
   --bg-card-hover: rgba(255, 255, 255, 0.08);
-  
+
   --text-primary: #ffffff;
   --text-secondary: #b8b8d1;
   --text-muted: #6b6b8c;
-  
+
   --border-color: rgba(255, 255, 255, 0.1);
   --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
   --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.2);
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.3);
   --shadow-glow: 0 0 20px rgba(102, 126, 234, 0.3);
-  
+
   /* Spacing */
   --spacing-xs: 0.5rem;
   --spacing-sm: 1rem;
   --spacing-md: 1.5rem;
   --spacing-lg: 2rem;
   --spacing-xl: 3rem;
-  
+
   /* Border Radius */
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 24px;
-  
+
   /* Typography */
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   --font-size-xs: 0.75rem;
@@ -54,7 +54,7 @@
   --font-size-2xl: 1.5rem;
   --font-size-3xl: 2rem;
   --font-size-4xl: 2.5rem;
-  
+
   /* Transitions */
   --transition-fast: 150ms ease-in-out;
   --transition-base: 250ms ease-in-out;
@@ -85,7 +85,7 @@ body::before {
   left: 0;
   width: 100%;
   height: 100%;
-  background: 
+  background:
     radial-gradient(circle at 20% 50%, rgba(102, 126, 234, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 80% 80%, rgba(118, 75, 162, 0.15) 0%, transparent 50%),
     radial-gradient(circle at 40% 20%, rgba(74, 172, 254, 0.1) 0%, transparent 50%);
@@ -94,8 +94,17 @@ body::before {
 }
 
 @keyframes backgroundShift {
-  0%, 100% { opacity: 1; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.1); }
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.8;
+    transform: scale(1.1);
+  }
 }
 
 /* Glassmorphism Card */
@@ -266,6 +275,7 @@ select.input-field {
     opacity: 0;
     transform: translateY(30px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -296,8 +306,13 @@ select.input-field {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 /* Grid System */
@@ -404,7 +419,9 @@ select.input-field {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Tabs */
@@ -447,21 +464,69 @@ select.input-field {
 }
 
 /* Utility Classes */
-.text-center { text-align: center; }
-.text-muted { color: var(--text-muted); }
-.text-secondary { color: var(--text-secondary); }
-.mb-sm { margin-bottom: var(--spacing-sm); }
-.mb-md { margin-bottom: var(--spacing-md); }
-.mb-lg { margin-bottom: var(--spacing-lg); }
-.mt-sm { margin-top: var(--spacing-sm); }
-.mt-md { margin-top: var(--spacing-md); }
-.mt-lg { margin-top: var(--spacing-lg); }
-.w-full { width: 100%; }
-.flex { display: flex; }
-.flex-center { display: flex; align-items: center; justify-content: center; }
-.flex-between { display: flex; align-items: center; justify-content: space-between; }
-.gap-sm { gap: var(--spacing-sm); }
-.gap-md { gap: var(--spacing-md); }
+.text-center {
+  text-align: center;
+}
+
+.text-muted {
+  color: var(--text-muted);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
+
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+
+.w-full {
+  width: 100%;
+}
+
+.flex {
+  display: flex;
+}
+
+.flex-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flex-between {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.gap-sm {
+  gap: var(--spacing-sm);
+}
+
+.gap-md {
+  gap: var(--spacing-md);
+}
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -470,15 +535,15 @@ select.input-field {
     gap: var(--spacing-md);
     text-align: center;
   }
-  
+
   .grid-2 {
     grid-template-columns: 1fr;
   }
-  
+
   .table-wrapper {
     font-size: var(--font-size-sm);
   }
-  
+
   .table th,
   .table td {
     padding: var(--spacing-sm);
@@ -502,4 +567,87 @@ select.input-field {
 
 .Toastify__toast--info {
   background: var(--primary-gradient) !important;
+}
+
+/* Admin Panel Creation Layout */
+.create-row {
+  display: flex;
+  gap: var(--spacing-xl);
+  padding: var(--spacing-xl) 0;
+  border-bottom: 1px solid var(--border-color);
+  align-items: flex-start;
+}
+
+.create-row:last-child {
+  border-bottom: none;
+}
+
+.create-row.reverse {
+  flex-direction: row-reverse;
+}
+
+.resource-info {
+  flex: 1;
+}
+
+.resource-info h3 {
+  font-size: var(--font-size-2xl);
+  margin-bottom: var(--spacing-sm);
+  color: var(--text-primary);
+}
+
+.resource-info p {
+  color: var(--text-secondary);
+  font-size: var(--font-size-base);
+  line-height: 1.6;
+}
+
+.resource-form {
+  flex: 1.5;
+  max-width: 600px;
+}
+
+/* Sub Tabs */
+.sub-tabs {
+  display: flex;
+  gap: var(--spacing-xs);
+  margin-bottom: var(--spacing-md);
+  padding: 4px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-md);
+  width: fit-content;
+}
+
+.sub-tab {
+  padding: 0.5rem 1.25rem;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  border-radius: var(--radius-sm);
+  transition: all var(--transition-base);
+}
+
+.sub-tab:hover {
+  color: var(--text-primary);
+}
+
+.sub-tab.active {
+  background: var(--bg-card);
+  color: var(--primary);
+  box-shadow: var(--shadow-sm);
+}
+
+@media (max-width: 992px) {
+  .create-row {
+    flex-direction: column;
+    gap: var(--spacing-lg);
+  }
+
+  .resource-form {
+    max-width: 100%;
+    width: 100%;
+  }
 }

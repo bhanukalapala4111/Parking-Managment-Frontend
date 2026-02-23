@@ -7,6 +7,7 @@ const EmployeePanel = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
     const [bookings, setBookings] = useState([]);
+    const [history, setHistory] = useState([]);
 
     // Book Slot Form
     const [userId, setUserId] = useState('');
@@ -15,32 +16,51 @@ const EmployeePanel = () => {
     const [slotId, setSlotId] = useState('');
 
     useEffect(() => {
+        const id = user?.id || user?.userId || user?.user?.id || 11;
+        console.log('EmployeePanel: Initializing with ID:', id, user);
+        setUserId(id.toString());
         loadBookings();
-    }, []);
+        loadHistory();
+    }, [user?.id]);
 
     const loadBookings = async () => {
+        // Try to find the ID in any possible location
+        const id = user?.id || user?.userId || user?.user?.id || 11;
+        console.log('EmployeePanel debug: Attempting booking load with ID:', id, 'from user object:', user);
+
         try {
-            const data = await slotService.getUserBookings(user?.id || 1);
+            const data = await slotService.getUserBookings(id);
             setBookings(data);
         } catch (error) {
-            console.error('Failed to load bookings:', error);
+            console.error('EmployeePanel: Failed to load bookings:', error);
+        }
+    };
+
+    const loadHistory = async () => {
+        const id = user?.id || user?.userId || user?.user?.id || 11;
+        console.log('EmployeePanel debug: Attempting history load with ID:', id);
+
+        try {
+            const data = await slotService.getBookingHistory(id);
+            setHistory(data);
+        } catch (error) {
+            console.error('EmployeePanel: Failed to load history:', error);
         }
     };
 
     const handleBookSlot = async (e) => {
         e.preventDefault();
-        if (!userId) {
-            toast.error('Please enter user ID');
-            return;
-        }
+        const idToBook = userId || user?.id || user?.userId || 11;
 
+        console.log('EmployeePanel: Attempting to book for ID:', idToBook);
         setLoading(true);
         try {
-            const slotId = await slotService.bookSlot(userId);
+            const slotId = await slotService.bookSlot(idToBook);
             toast.success(`Slot booked successfully! Slot ID: ${slotId}`);
-            setUserId('');
             loadBookings();
+            loadHistory();
         } catch (error) {
+            console.error('EmployeePanel: Booking failed:', error);
             toast.error(error.response?.data?.message || 'Failed to book slot');
         } finally {
             setLoading(false);
@@ -60,6 +80,7 @@ const EmployeePanel = () => {
             toast.success('Slot released successfully!');
             setSlotId('');
             loadBookings();
+            loadHistory();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to release slot');
         } finally {
@@ -118,7 +139,7 @@ const EmployeePanel = () => {
             </div>
 
             {/* My Bookings */}
-            <div className="glass-card card">
+            <div className="glass-card card mb-lg">
                 <div className="card-header">
                     <h3 className="card-title">📋 My Active Bookings</h3>
                 </div>
@@ -150,6 +171,46 @@ const EmployeePanel = () => {
                                 <tr>
                                     <td colSpan="5" className="text-center text-muted">
                                         No active bookings
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div className="glass-card card">
+                <div className="card-header">
+                    <h3 className="card-title">🕰️ Booking History</h3>
+                </div>
+                <div className="table-wrapper">
+                    <table className="table">
+                        <thead>
+                            <tr>
+                                <th>Slot ID</th>
+                                <th>Floor</th>
+                                <th>Slot Number</th>
+                                <th>Booking Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {history.length > 0 ? (
+                                history.map((record) => (
+                                    <tr key={record.id}>
+                                        <td>{record.slotId}</td>
+                                        <td>Floor {record.floorNumber}</td>
+                                        <td>{record.slotNumber}</td>
+                                        <td>{new Date(record.bookedAt).toLocaleString()}</td>
+                                        <td>
+                                            <span className="badge badge-admin">{record.status}</span>
+                                        </td>
+                                    </tr>
+                                ))
+                            ) : (
+                                <tr>
+                                    <td colSpan="5" className="text-center text-muted">
+                                        No history found
                                     </td>
                                 </tr>
                             )}

@@ -24,6 +24,7 @@ const Login = () => {
             const data = await authService.login(email, password);
 
             const userData = {
+                id: data.id || data.userId,
                 userName: data.userName,
                 email: email,
                 role: data.role,

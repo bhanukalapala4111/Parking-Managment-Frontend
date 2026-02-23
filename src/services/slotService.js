@@ -13,13 +13,27 @@ export const slotService = {
 
     // Placeholder - returns mock data since endpoint doesn't exist
     getUserBookings: async (userId) => {
-        // TODO: Replace with actual API call when endpoint is available
-        // const response = await api.get(`/slot/user/${userId}`);
-        // return response.data;
+        const response = await api.get(`/slot/user/${userId}`);
+        return response.data.map(slot => ({
+            id: slot.id,
+            floorNumber: slot.parkingFloor.floorNumber,
+            slotNumber: slot.slotNumber,
+            bookedAt: slot.createdOn,
+            status: slot.status
+        }));
+    },
 
-        return [
-            { id: 101, floorNumber: 1, slotNumber: 'A-15', bookedAt: '2026-02-18T10:30:00', status: 'ACTIVE' },
-            { id: 102, floorNumber: 2, slotNumber: 'B-23', bookedAt: '2026-02-17T14:20:00', status: 'ACTIVE' },
-        ];
+    getBookingHistory: async (userId) => {
+        const id = userId || 1;
+        const response = await api.get(`/user/${id}/history`);
+        console.log('slotService: Raw history data from API:', response.data);
+        return response.data.map(record => ({
+            id: record.id,
+            slotId: record.slotId,
+            floorNumber: record.floorNumber,
+            slotNumber: record.slotNumber,
+            bookedAt: record.bookingDate,
+            status: 'COMPLETED' // History records are typically completed/past bookings
+        }));
     },
 };
