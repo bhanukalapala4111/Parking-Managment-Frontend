@@ -20,4 +20,8 @@ export const companyService = {
             }
         });
     },
+    updateCompany: async (id, companyData) => {
+        const response = await api.patch(`/company/update/${id}`, companyData);
+        return response.data;
+    },
 };

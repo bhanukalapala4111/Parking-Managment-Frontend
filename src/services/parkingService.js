@@ -18,4 +18,8 @@ export const parkingService = {
             slots: item.parkingFloor.slots
         }));
     },
+    updateFloor: async (id, floorData) => {
+        const response = await api.patch(`/parking/update/${id}`, floorData);
+        return response.data;
+    },
 };

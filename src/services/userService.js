@@ -12,4 +12,8 @@ export const userService = {
             role: item.user.role
         }));
     },
+    updateUser: async (id, userData) => {
+        const response = await api.patch(`/user/update/${id}`, userData);
+        return response.data;
+    },
 };

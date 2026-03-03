@@ -22,13 +22,15 @@ const Login = () => {
         setLoading(true);
         try {
             const data = await authService.login(email, password);
+            console.log('Login: Raw API response:', data);
 
             const userData = {
-                id: data.id || data.userId,
-                userName: data.userName,
+                id: data.id || data.userId || data.user?.id,
+                userName: data.userName || data.user?.userName,
                 email: email,
-                role: data.role,
+                role: data.role || data.user?.role,
             };
+            console.log('Login: Mapped userData:', userData);
 
             login(userData, data.token);
             toast.success(`Welcome back, ${data.userName || 'User'}!`);

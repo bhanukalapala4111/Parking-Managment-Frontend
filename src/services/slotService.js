@@ -1,8 +1,8 @@
 import api from './api';
 
 export const slotService = {
-    bookSlot: async (userId) => {
-        const response = await api.post(`/slot/book/${userId}`);
+    bookSlot: async (userId, vehicleType) => {
+        const response = await api.post(`/slot/book/${userId}?vehicleType=${vehicleType}`);
         return response.data;
     },
 
@@ -24,8 +24,8 @@ export const slotService = {
     },
 
     getBookingHistory: async (userId) => {
-        const id = userId || 1;
-        const response = await api.get(`/user/${id}/history`);
+        if (!userId) return [];
+        const response = await api.get(`/user/${userId}/history`);
         console.log('slotService: Raw history data from API:', response.data);
         return response.data.map(record => ({
             id: record.id,

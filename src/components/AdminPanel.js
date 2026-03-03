@@ -31,11 +31,15 @@ const AdminPanel = () => {
     const [users, setUsers] = useState([]);
     const [companies, setCompanies] = useState([]);
     const [floors, setFloors] = useState([]);
+    const [searchTerm, setSearchTerm] = useState('');
+
+    // Edit State
+    const [isEditing, setIsEditing] = useState(false);
+    const [editingItem, setEditingItem] = useState(null); // { type: 'user'|'company'|'floor', data: {} }
+    const [editForm, setEditForm] = useState({});
 
     useEffect(() => {
-        if (activeTab === 'view') {
-            loadViewData();
-        }
+        loadViewData();
     }, [activeTab]);
 
     const loadViewData = async () => {
@@ -124,8 +128,54 @@ const AdminPanel = () => {
         }
     };
 
+    const handleStartEdit = (type, item) => {
+        setEditingItem({ type, data: item });
+        setEditForm({ ...item });
+        setIsEditing(true);
+    };
+
+    const handleUpdate = async (e) => {
+        e.preventDefault();
+        setLoading(true);
+        try {
+            if (editingItem.type === 'user') {
+                await userService.updateUser(editingItem.data.id, editForm);
+            } else if (editingItem.type === 'company') {
+                await companyService.updateCompany(editingItem.data.id, editForm);
+            } else if (editingItem.type === 'floor') {
+                await parkingService.updateFloor(editingItem.data.id, editForm);
+            }
+            toast.success(`${editingItem.type.charAt(0).toUpperCase() + editingItem.type.slice(1)} updated successfully!`);
+            setIsEditing(false);
+            loadViewData();
+        } catch (error) {
+            toast.error(error.response?.data?.message || `Failed to update ${editingItem.type}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <div className="admin-panel">
+            <div className="stats-grid">
+                <div className="glass-card stat-card">
+                    <span className="stat-label">Total Users</span>
+                    <span className="stat-value">{users.length}</span>
+                </div>
+                <div className="glass-card stat-card" style={{ borderColor: 'var(--secondary)' }}>
+                    <span className="stat-label">Companies</span>
+                    <span className="stat-value">{companies.length}</span>
+                </div>
+                <div className="glass-card stat-card" style={{ borderColor: 'var(--success)' }}>
+                    <span className="stat-label">Total Capacity</span>
+                    <span className="stat-value">{floors.reduce((acc, f) => acc + f.floorCapacity, 0)}</span>
+                </div>
+                <div className="glass-card stat-card" style={{ borderColor: 'var(--danger)' }}>
+                    <span className="stat-label">Available Slots</span>
+                    <span className="stat-value">{floors.reduce((acc, f) => acc + f.availableCapacity, 0)}</span>
+                </div>
+            </div>
+
             <div className="tabs">
                 <button
                     className={`tab ${activeTab === 'create' ? 'active' : ''}`}
@@ -348,6 +398,17 @@ const AdminPanel = () => {
 
             {activeTab === 'view' && (
                 <div className="view-section">
+                    <div className="search-container">
+                        <span className="search-icon">🔍</span>
+                        <input
+                            type="text"
+                            className="search-bar"
+                            placeholder={`Search ${activeSubTab}...`}
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+
                     <div className="sub-tabs">
                         <button
                             className={`sub-tab ${activeSubTab === 'users' ? 'active' : ''}`}
@@ -389,10 +450,15 @@ const AdminPanel = () => {
                                             <th>Email</th>
                                             <th>Company</th>
                                             <th>Role</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {users.map((user) => (
+                                        {users.filter(u =>
+                                            (u.userName && String(u.userName).toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                            (u.email && String(u.email).toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                            (u.company && String(u.company).toLowerCase().includes(searchTerm.toLowerCase()))
+                                        ).map((user) => (
                                             <tr key={user.id}>
                                                 <td>{user.id}</td>
                                                 <td>{user.userName}</td>
@@ -403,8 +469,20 @@ const AdminPanel = () => {
                                                         {user.role}
                                                     </span>
                                                 </td>
+                                                <td>
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => handleStartEdit('user', user)}
+                                                        title="Edit User"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
+                                        {users.length === 0 && (
+                                            <tr><td colSpan="5" className="text-center text-muted">No users found</td></tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -424,17 +502,32 @@ const AdminPanel = () => {
                                             <th>Company Name</th>
                                             <th>Total Capacity</th>
                                             <th>Available</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {companies.map((comp) => (
+                                        {companies.filter(c =>
+                                            c.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
+                                        ).map((comp) => (
                                             <tr key={comp.id}>
                                                 <td>{comp.id}</td>
                                                 <td>{comp.companyName}</td>
                                                 <td>{comp.totalCapacity}</td>
                                                 <td>{comp.availableCapacity}</td>
+                                                <td>
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => handleStartEdit('company', comp)}
+                                                        title="Edit Company"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
+                                        {companies.length === 0 && (
+                                            <tr><td colSpan="4" className="text-center text-muted">No companies found</td></tr>
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -455,6 +548,7 @@ const AdminPanel = () => {
                                             <th>Total Capacity</th>
                                             <th>Available</th>
                                             <th>Occupancy</th>
+                                            <th>Actions</th>
                                         </tr>
                                     </thead>
                                     <tbody>
@@ -467,6 +561,15 @@ const AdminPanel = () => {
                                                 <td>
                                                     {Math.round(((floor.floorCapacity - floor.availableCapacity) / floor.floorCapacity) * 100)}%
                                                 </td>
+                                                <td>
+                                                    <button
+                                                        className="btn-icon"
+                                                        onClick={() => handleStartEdit('floor', floor)}
+                                                        title="Edit Floor"
+                                                    >
+                                                        ✏️
+                                                    </button>
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -474,6 +577,141 @@ const AdminPanel = () => {
                             </div>
                         </div>
                     )}
+                </div>
+            )}
+
+            {/* Edit Modal */}
+            {isEditing && (
+                <div className="modal-overlay">
+                    <div className="glass-card card modal-content">
+                        <div className="modal-header">
+                            <h3 className="card-title">Edit {editingItem.type.charAt(0).toUpperCase() + editingItem.type.slice(1)}</h3>
+                            <button className="close-btn" onClick={() => setIsEditing(false)}>×</button>
+                        </div>
+                        <form onSubmit={handleUpdate}>
+                            {editingItem.type === 'user' && (
+                                <>
+                                    <div className="input-group">
+                                        <label className="input-label">User Name</label>
+                                        <input
+                                            type="text"
+                                            className="input-field"
+                                            value={editForm.userName}
+                                            onChange={(e) => setEditForm({ ...editForm, userName: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Email</label>
+                                        <input
+                                            type="email"
+                                            className="input-field"
+                                            value={editForm.email}
+                                            onChange={(e) => setEditForm({ ...editForm, email: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Role</label>
+                                        <select
+                                            className="input-field"
+                                            value={editForm.role}
+                                            onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
+                                        >
+                                            <option value="EMPLOYEE">EMPLOYEE</option>
+                                            <option value="ADMIN">ADMIN</option>
+                                        </select>
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Company</label>
+                                        <input
+                                            type="text"
+                                            className="input-field"
+                                            value={editForm.company}
+                                            onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            {editingItem.type === 'company' && (
+                                <>
+                                    <div className="input-group">
+                                        <label className="input-label">Company Name</label>
+                                        <input
+                                            type="text"
+                                            className="input-field"
+                                            value={editForm.companyName}
+                                            onChange={(e) => setEditForm({ ...editForm, companyName: e.target.value })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Total Capacity</label>
+                                        <input
+                                            type="number"
+                                            className="input-field"
+                                            value={editForm.totalCapacity}
+                                            onChange={(e) => setEditForm({ ...editForm, totalCapacity: Number(e.target.value) })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Available Capacity</label>
+                                        <input
+                                            type="number"
+                                            className="input-field"
+                                            value={editForm.availableCapacity}
+                                            onChange={(e) => setEditForm({ ...editForm, availableCapacity: Number(e.target.value) })}
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            {editingItem.type === 'floor' && (
+                                <>
+                                    <div className="input-group">
+                                        <label className="input-label">Floor Number</label>
+                                        <input
+                                            type="number"
+                                            className="input-field"
+                                            value={editForm.floorNumber}
+                                            onChange={(e) => setEditForm({ ...editForm, floorNumber: Number(e.target.value) })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Floor Capacity</label>
+                                        <input
+                                            type="number"
+                                            className="input-field"
+                                            value={editForm.floorCapacity}
+                                            onChange={(e) => setEditForm({ ...editForm, floorCapacity: Number(e.target.value) })}
+                                            required
+                                        />
+                                    </div>
+                                    <div className="input-group">
+                                        <label className="input-label">Available Capacity</label>
+                                        <input
+                                            type="number"
+                                            className="input-field"
+                                            value={editForm.availableCapacity}
+                                            onChange={(e) => setEditForm({ ...editForm, availableCapacity: Number(e.target.value) })}
+                                            required
+                                        />
+                                    </div>
+                                </>
+                            )}
+                            <div className="flex gap-md mt-lg">
+                                <button type="submit" className="btn btn-primary flex-1" disabled={loading}>
+                                    {loading ? 'Updating...' : 'Save Changes'}
+                                </button>
+                                <button type="button" className="btn btn-secondary" onClick={() => setIsEditing(false)}>
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             )}
         </div>
