@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
+import loginBg from '../assets/login-bg.png';
 
 const Login = () => {
     const [email, setEmail] = useState('');
@@ -22,7 +23,6 @@ const Login = () => {
         setLoading(true);
         try {
             const data = await authService.login(email, password);
-            console.log('Login: Raw API response:', data);
 
             const userData = {
                 id: data.id || data.userId || data.user?.id,
@@ -30,7 +30,6 @@ const Login = () => {
                 email: email,
                 role: data.role || data.user?.role,
             };
-            console.log('Login: Mapped userData:', userData);
 
             login(userData, data.token);
             toast.success(`Welcome back, ${data.userName || 'User'}!`);
@@ -43,7 +42,7 @@ const Login = () => {
     };
 
     return (
-        <div className="page-wrapper">
+        <div className="page-wrapper login-page" style={{ backgroundImage: `url(${loginBg})` }}>
             <div className="auth-card glass-card">
                 <div className="text-center mb-lg">
                     <h1 className="card-title" style={{ fontSize: 'var(--font-size-3xl)' }}>

@@ -3,6 +3,7 @@ import { toast } from 'react-toastify';
 import { slotService } from '../services/slotService';
 import { useAuth } from '../context/AuthContext';
 
+
 const EmployeePanel = () => {
     const { user } = useAuth();
     const [loading, setLoading] = useState(false);
@@ -25,10 +26,6 @@ const EmployeePanel = () => {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         const id = user?.id || user?.userId || user?.user?.id || storedUser.id || storedUser.userId;
 
-        console.log('EmployeePanel: Initializing. Context user:', user);
-        console.log('EmployeePanel: Initializing. Stored user:', storedUser);
-        console.log('EmployeePanel: Resulting ID:', id);
-
         if (id) {
             setUserId(id.toString());
             loadBookings(id);
@@ -45,12 +42,15 @@ const EmployeePanel = () => {
             return;
         }
 
-        console.log('EmployeePanel: Loading bookings for ID:', id);
         try {
             const data = await slotService.getUserBookings(id);
+            console.log('EmployeePanel: Data from service:', data);
+
+            // Trusting API response as per user: "getuserbookings by user id give the active bookings for the user"
             setBookings(data || []);
         } catch (error) {
             console.error('EmployeePanel: Failed to load bookings:', error);
+            toast.error('Failed to load active bookings');
         }
     };
 
@@ -63,9 +63,11 @@ const EmployeePanel = () => {
             return;
         }
 
-        console.log('EmployeePanel: Loading history for ID:', id);
         try {
             const data = await slotService.getBookingHistory(id);
+            console.log('EmployeePanel: History data from service:', data);
+
+            // Trusting API response directly
             setHistory(data || []);
         } catch (error) {
             console.error('EmployeePanel: Failed to load history:', error);
@@ -91,7 +93,7 @@ const EmployeePanel = () => {
         console.log('EmployeePanel: Calling bookSlot with ID:', idToBook);
         setLoading(true);
         try {
-            const slotId = await slotService.bookSlot(idToBook);
+            const slotId = await slotService.bookSlot(idToBook, vehicleType);
             toast.success(`Slot booked successfully! Slot ID: ${slotId}`);
             loadBookings();
             loadHistory();
@@ -203,19 +205,19 @@ const EmployeePanel = () => {
                 </div>
                 {showActive && (
                     <div className="table-wrapper">
-                        <table className="table">
-                            <thead>
-                                <tr>
-                                    <th>Slot ID</th>
-                                    <th>Floor</th>
-                                    <th>Slot Number</th>
-                                    <th>Booked At</th>
-                                    <th>Status</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {bookings.length > 0 ? (
-                                    bookings.map((booking) => (
+                        {bookings.length > 0 ? (
+                            <table className="table">
+                                <thead>
+                                    <tr>
+                                        <th>Slot ID</th>
+                                        <th>Floor</th>
+                                        <th>Slot Number</th>
+                                        <th>Booked At</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {bookings.map((booking) => (
                                         <tr key={booking.id}>
                                             <td>{booking.id}</td>
                                             <td>Floor {booking.floorNumber}</td>
@@ -225,16 +227,14 @@ const EmployeePanel = () => {
                                                 <span className="badge badge-employee">{booking.status}</span>
                                             </td>
                                         </tr>
-                                    ))
-                                ) : (
-                                    <tr>
-                                        <td colSpan="5" className="text-center text-muted">
-                                            No active bookings
-                                        </td>
-                                    </tr>
-                                )}
-                            </tbody>
-                        </table>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="illustration-container">
+                                <p className="illustration-text">You don't have any active bookings right now.</p>
+                            </div>
+                        )}
                     </div>
                 )}
             </div>

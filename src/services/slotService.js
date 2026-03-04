@@ -14,13 +14,20 @@ export const slotService = {
     // Placeholder - returns mock data since endpoint doesn't exist
     getUserBookings: async (userId) => {
         const response = await api.get(`/slot/user/${userId}`);
-        return response.data.map(slot => ({
-            id: slot.id,
-            floorNumber: slot.parkingFloor.floorNumber,
-            slotNumber: slot.slotNumber,
-            bookedAt: slot.createdOn,
-            status: slot.status
-        }));
+        console.log('slotService: Raw bookings response:', response.data);
+        return response.data.map(slot => {
+            // Log each slot to see its specific structure
+            console.log(`slotService: Mapping slot ${slot.id}`, slot);
+            return {
+                id: slot.id,
+                floorNumber: slot.parkingFloor?.floorNumber || 'N/A',
+                slotNumber: slot.slotNumber,
+                bookedAt: slot.createdOn,
+                status: slot.status,
+                // Try all possible user ID locations
+                bookedByUserId: slot.user?.id || slot.user?.userId || slot.userId || slot.bookedByUserId
+            };
+        });
     },
 
     getBookingHistory: async (userId) => {
@@ -33,7 +40,8 @@ export const slotService = {
             floorNumber: record.floorNumber,
             slotNumber: record.slotNumber,
             bookedAt: record.bookingDate,
-            status: 'COMPLETED' // History records are typically completed/past bookings
+            status: 'COMPLETED',
+            bookedByUserId: record.userId // Capture owner ID
         }));
     },
 };

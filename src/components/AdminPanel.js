@@ -4,6 +4,7 @@ import { authService } from '../services/authService';
 import { companyService } from '../services/companyService';
 import { parkingService } from '../services/parkingService';
 import { userService } from '../services/userService';
+import noResultsImg from '../assets/no-results.png';
 
 const AdminPanel = () => {
     const [activeTab, setActiveTab] = useState('create');
@@ -143,7 +144,12 @@ const AdminPanel = () => {
             } else if (editingItem.type === 'company') {
                 await companyService.updateCompany(editingItem.data.id, editForm);
             } else if (editingItem.type === 'floor') {
-                await parkingService.updateFloor(editingItem.data.id, editForm);
+                // Sync with UpdateParkingFloorRequest DTO (only floorNumber and floorCapacity)
+                const floorUpdateData = {
+                    floorNumber: Number(editForm.floorNumber),
+                    floorCapacity: Number(editForm.floorCapacity)
+                };
+                await parkingService.updateFloor(editingItem.data.id, floorUpdateData);
             }
             toast.success(`${editingItem.type.charAt(0).toUpperCase() + editingItem.type.slice(1)} updated successfully!`);
             setIsEditing(false);
@@ -458,30 +464,44 @@ const AdminPanel = () => {
                                             (u.userName && String(u.userName).toLowerCase().includes(searchTerm.toLowerCase())) ||
                                             (u.email && String(u.email).toLowerCase().includes(searchTerm.toLowerCase())) ||
                                             (u.company && String(u.company).toLowerCase().includes(searchTerm.toLowerCase()))
-                                        ).map((user) => (
-                                            <tr key={user.id}>
-                                                <td>{user.id}</td>
-                                                <td>{user.userName}</td>
-                                                <td>{user.email}</td>
-                                                <td>{user.company}</td>
-                                                <td>
-                                                    <span className={`badge ${user.role === 'ADMIN' ? 'badge-admin' : 'badge-employee'}`}>
-                                                        {user.role}
-                                                    </span>
-                                                </td>
-                                                <td>
-                                                    <button
-                                                        className="btn-icon"
-                                                        onClick={() => handleStartEdit('user', user)}
-                                                        title="Edit User"
-                                                    >
-                                                        ✏️
-                                                    </button>
+                                        ).length > 0 ? (
+                                            users.filter(u =>
+                                                (u.userName && String(u.userName).toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                (u.email && String(u.email).toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                (u.company && String(u.company).toLowerCase().includes(searchTerm.toLowerCase()))
+                                            ).map((user) => (
+                                                <tr key={user.id}>
+                                                    <td>{user.id}</td>
+                                                    <td>{user.userName}</td>
+                                                    <td>{user.email}</td>
+                                                    <td>{user.company}</td>
+                                                    <td>
+                                                        <span className={`badge ${user.role === 'ADMIN' ? 'badge-admin' : 'badge-employee'}`}>
+                                                            {user.role}
+                                                        </span>
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            className="btn-icon"
+                                                            onClick={() => handleStartEdit('user', user)}
+                                                            title="Edit User"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="6">
+                                                    <div className="illustration-container">
+                                                        <img src={noResultsImg} alt="No results" className="empty-state-img" />
+                                                        <p className="illustration-text">
+                                                            {searchTerm ? `No matches found for "${searchTerm}"` : 'No users registered in the system yet.'}
+                                                        </p>
+                                                    </div>
                                                 </td>
                                             </tr>
-                                        ))}
-                                        {users.length === 0 && (
-                                            <tr><td colSpan="5" className="text-center text-muted">No users found</td></tr>
                                         )}
                                     </tbody>
                                 </table>
@@ -508,25 +528,37 @@ const AdminPanel = () => {
                                     <tbody>
                                         {companies.filter(c =>
                                             c.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
-                                        ).map((comp) => (
-                                            <tr key={comp.id}>
-                                                <td>{comp.id}</td>
-                                                <td>{comp.companyName}</td>
-                                                <td>{comp.totalCapacity}</td>
-                                                <td>{comp.availableCapacity}</td>
-                                                <td>
-                                                    <button
-                                                        className="btn-icon"
-                                                        onClick={() => handleStartEdit('company', comp)}
-                                                        title="Edit Company"
-                                                    >
-                                                        ✏️
-                                                    </button>
+                                        ).length > 0 ? (
+                                            companies.filter(c =>
+                                                c.companyName?.toLowerCase().includes(searchTerm.toLowerCase())
+                                            ).map((comp) => (
+                                                <tr key={comp.id}>
+                                                    <td>{comp.id}</td>
+                                                    <td>{comp.companyName}</td>
+                                                    <td>{comp.totalCapacity}</td>
+                                                    <td>{comp.availableCapacity}</td>
+                                                    <td>
+                                                        <button
+                                                            className="btn-icon"
+                                                            onClick={() => handleStartEdit('company', comp)}
+                                                            title="Edit Company"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="5">
+                                                    <div className="illustration-container">
+                                                        <img src={noResultsImg} alt="No results" className="empty-state-img" />
+                                                        <p className="illustration-text">
+                                                            {searchTerm ? `No companies matching "${searchTerm}"` : 'No companies registered yet.'}
+                                                        </p>
+                                                    </div>
                                                 </td>
                                             </tr>
-                                        ))}
-                                        {companies.length === 0 && (
-                                            <tr><td colSpan="4" className="text-center text-muted">No companies found</td></tr>
                                         )}
                                     </tbody>
                                 </table>
@@ -552,26 +584,37 @@ const AdminPanel = () => {
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {floors.map((floor) => (
-                                            <tr key={floor.id}>
-                                                <td>{floor.id}</td>
-                                                <td>Floor {floor.floorNumber}</td>
-                                                <td>{floor.floorCapacity}</td>
-                                                <td>{floor.availableCapacity}</td>
-                                                <td>
-                                                    {Math.round(((floor.floorCapacity - floor.availableCapacity) / floor.floorCapacity) * 100)}%
-                                                </td>
-                                                <td>
-                                                    <button
-                                                        className="btn-icon"
-                                                        onClick={() => handleStartEdit('floor', floor)}
-                                                        title="Edit Floor"
-                                                    >
-                                                        ✏️
-                                                    </button>
+                                        {floors.length > 0 ? (
+                                            floors.map((floor) => (
+                                                <tr key={floor.id}>
+                                                    <td>{floor.id}</td>
+                                                    <td>Floor {floor.floorNumber}</td>
+                                                    <td>{floor.floorCapacity}</td>
+                                                    <td>{floor.availableCapacity}</td>
+                                                    <td>
+                                                        {Math.round(((floor.floorCapacity - floor.availableCapacity) / floor.floorCapacity) * 100)}%
+                                                    </td>
+                                                    <td>
+                                                        <button
+                                                            className="btn-icon"
+                                                            onClick={() => handleStartEdit('floor', floor)}
+                                                            title="Edit Floor"
+                                                        >
+                                                            ✏️
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan="6">
+                                                    <div className="illustration-container">
+                                                        <img src={noResultsImg} alt="No floors" className="empty-state-img" />
+                                                        <p className="illustration-text">No parking floors configured yet.</p>
+                                                    </div>
                                                 </td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
                             </div>
@@ -687,16 +730,6 @@ const AdminPanel = () => {
                                             className="input-field"
                                             value={editForm.floorCapacity}
                                             onChange={(e) => setEditForm({ ...editForm, floorCapacity: Number(e.target.value) })}
-                                            required
-                                        />
-                                    </div>
-                                    <div className="input-group">
-                                        <label className="input-label">Available Capacity</label>
-                                        <input
-                                            type="number"
-                                            className="input-field"
-                                            value={editForm.availableCapacity}
-                                            onChange={(e) => setEditForm({ ...editForm, availableCapacity: Number(e.target.value) })}
                                             required
                                         />
                                     </div>
