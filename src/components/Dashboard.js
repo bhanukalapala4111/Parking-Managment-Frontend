@@ -3,14 +3,21 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import AdminPanel from './AdminPanel';
 import EmployeePanel from './EmployeePanel';
+import CompanyPanel from './CompanyPanel';
 
 const Dashboard = () => {
-    const { user, logout, isAdmin } = useAuth();
+    const { user, logout, isAdmin, isCompanyAdmin } = useAuth();
     const navigate = useNavigate();
 
     const handleLogout = () => {
         logout();
         navigate('/');
+    };
+
+    const renderPanel = () => {
+        if (isAdmin()) return <AdminPanel />;
+        if (isCompanyAdmin()) return <CompanyPanel />;
+        return <EmployeePanel />;
     };
 
     return (
@@ -22,7 +29,7 @@ const Dashboard = () => {
                     </h1>
                     <p className="text-secondary">
                         Welcome back, <strong>{user?.userName}</strong>
-                        <span className={`badge ${isAdmin() ? 'badge-admin' : 'badge-employee'} ml-sm`} style={{ marginLeft: '0.5rem' }}>
+                        <span className={`badge ${isAdmin() ? 'badge-admin' : isCompanyAdmin() ? 'badge-primary' : 'badge-employee'} ml-sm`} style={{ marginLeft: '0.5rem' }}>
                             {user?.role}
                         </span>
                     </p>
@@ -33,7 +40,7 @@ const Dashboard = () => {
             </div>
 
             <div className="dashboard-content">
-                {isAdmin() ? <AdminPanel /> : <EmployeePanel />}
+                {renderPanel()}
             </div>
         </div>
     );

@@ -44,4 +44,19 @@ export const slotService = {
             bookedByUserId: record.userId // Capture owner ID
         }));
     },
+    getSlotsByCompany: async (companyId) => {
+        const response = await api.get(`/slot/company/${companyId}`);
+        console.log('slotService: Company slots response:', response.data);
+        return response.data.map(item => {
+            const slot = item.slot || item; // Robust handle for nested/flat
+            return {
+                id: slot.id,
+                floorNumber: slot.parkingFloor?.floorNumber || slot.floorNumber || 'N/A',
+                slotNumber: slot.slotNumber,
+                status: slot.status,
+                bookedByUserId: slot.occupantUserId || slot.userId || slot.bookedByUserId,
+                vehicleType: slot.vehicleType || 'N/A'
+            };
+        });
+    },
 };

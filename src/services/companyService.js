@@ -24,4 +24,13 @@ export const companyService = {
         const response = await api.patch(`/company/update/${id}`, companyData);
         return response.data;
     },
+    getCompanyById: async (id) => {
+        const response = await api.get(`/company/get/${id}`);
+        return {
+            id: response.data.company.id,
+            companyName: response.data.company.companyName,
+            totalCapacity: response.data.company.totalCapacity,
+            availableCapacity: response.data.company.availableCapacity
+        };
+    },
 };

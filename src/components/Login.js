@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { authService } from '../services/authService';
 import { useAuth } from '../context/AuthContext';
+import { jwtDecode } from 'jwt-decode';
 import loginBg from '../assets/login-bg.png';
 
 const Login = () => {
@@ -24,11 +25,21 @@ const Login = () => {
         try {
             const data = await authService.login(email, password);
 
+            let decodedToken = {};
+            try {
+                if (data.token) {
+                    decodedToken = jwtDecode(data.token);
+                }
+            } catch (e) {
+                console.error("Failed to decode token", e);
+            }
+
             const userData = {
-                id: data.id || data.userId || data.user?.id,
+                id: data.id || data.userId || data.user?.id || decodedToken.userId,
                 userName: data.userName || data.user?.userName,
                 email: email,
-                role: data.role || data.user?.role,
+                role: data.role || data.user?.role || decodedToken.role,
+                companyId: decodedToken.companyId || data.companyId || data.user?.companyId || data.company || data.user?.company
             };
 
             login(userData, data.token);

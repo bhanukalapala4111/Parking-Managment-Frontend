@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { toast } from 'react-toastify';
+import QRCode from 'react-qr-code';
 import { slotService } from '../services/slotService';
 import { useAuth } from '../context/AuthContext';
-
 
 const EmployeePanel = () => {
     const { user } = useAuth();
@@ -18,22 +18,14 @@ const EmployeePanel = () => {
     const [showActive, setShowActive] = useState(true);
     const [showHistory, setShowHistory] = useState(false);
 
+    // QR Code Modal
+    const [showQRModal, setShowQRModal] = useState(false);
+    const [selectedBookingForQR, setSelectedBookingForQR] = useState(null);
+
     // Release Slot Form
     const [slotId, setSlotId] = useState('');
 
-    useEffect(() => {
-        // Try all possible sources for the ID
-        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
-        const id = user?.id || user?.userId || user?.user?.id || storedUser.id || storedUser.userId;
-
-        if (id) {
-            setUserId(id.toString());
-            loadBookings(id);
-            loadHistory(id);
-        }
-    }, [user]);
-
-    const loadBookings = async (explicitId) => {
+    const loadBookings = useCallback(async (explicitId) => {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         const id = explicitId || user?.id || user?.userId || user?.user?.id || storedUser.id || storedUser.userId;
 
@@ -52,9 +44,9 @@ const EmployeePanel = () => {
             console.error('EmployeePanel: Failed to load bookings:', error);
             toast.error('Failed to load active bookings');
         }
-    };
+    }, [user]);
 
-    const loadHistory = async (explicitId) => {
+    const loadHistory = useCallback(async (explicitId) => {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
         const id = explicitId || user?.id || user?.userId || user?.user?.id || storedUser.id || storedUser.userId;
 
@@ -72,7 +64,19 @@ const EmployeePanel = () => {
         } catch (error) {
             console.error('EmployeePanel: Failed to load history:', error);
         }
-    };
+    }, [user]);
+
+    useEffect(() => {
+        // Try all possible sources for the ID
+        const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
+        const id = user?.id || user?.userId || user?.user?.id || storedUser.id || storedUser.userId;
+
+        if (id) {
+            setUserId(id.toString());
+            loadBookings(id);
+            loadHistory(id);
+        }
+    }, [user, loadBookings, loadHistory]);
 
     const handleBookSlot = async (e) => {
         e.preventDefault();
@@ -87,6 +91,12 @@ const EmployeePanel = () => {
 
         if (!idToBook) {
             toast.error('User ID not found. Please try logging out and back in.');
+            return;
+        }
+
+        // Restriction: Only one slot per employee
+        if (bookings.length > 0) {
+            toast.warning('You already have an active booking. Please release it before booking a new one.');
             return;
         }
 
@@ -221,7 +231,23 @@ const EmployeePanel = () => {
                                         <tr key={booking.id}>
                                             <td>{booking.id}</td>
                                             <td>Floor {booking.floorNumber}</td>
-                                            <td>{booking.slotNumber}</td>
+                                            <td>
+                                                <span
+                                                    style={{
+                                                        cursor: 'pointer',
+                                                        color: 'var(--primary)',
+                                                        textDecoration: 'underline',
+                                                        fontWeight: 'bold'
+                                                    }}
+                                                    onClick={() => {
+                                                        setSelectedBookingForQR(booking);
+                                                        setShowQRModal(true);
+                                                    }}
+                                                    title="View QR Pass"
+                                                >
+                                                    {booking.slotNumber} 📱
+                                                </span>
+                                            </td>
                                             <td>{new Date(booking.bookedAt).toLocaleString()}</td>
                                             <td>
                                                 <span className="badge badge-employee">{booking.status}</span>
@@ -286,6 +312,41 @@ const EmployeePanel = () => {
                     </div>
                 )}
             </div>
+
+            {/* QR Code Modal for specific booking */}
+            {showQRModal && selectedBookingForQR && (
+                <div className="modal-overlay">
+                    <div className="glass-card card modal-content" style={{ maxWidth: '400px', textAlign: 'center' }}>
+                        <div className="modal-header">
+                            <h3 className="card-title">Entry Pass QR</h3>
+                            <button className="close-btn" onClick={() => setShowQRModal(false)}>×</button>
+                        </div>
+                        <div className="flex-col flex-center p-md">
+                            <p className="mb-md text-muted">Show this QR code at the gate to verify your booking.</p>
+                            <div style={{ background: 'white', padding: '1rem', borderRadius: '1rem', display: 'inline-block' }}>
+                                <QRCode
+                                    value={JSON.stringify({
+                                        type: 'PARKING_PASS',
+                                        bookingId: selectedBookingForQR.id,
+                                        slotId: selectedBookingForQR.slotId,
+                                        slotNumber: selectedBookingForQR.slotNumber,
+                                        floorNumber: selectedBookingForQR.floorNumber,
+                                        userId: userId,
+                                        bookedAt: selectedBookingForQR.bookedAt,
+                                        status: selectedBookingForQR.status
+                                    })}
+                                    size={200}
+                                    fgColor="var(--primary)"
+                                />
+                            </div>
+                            <div className="mt-md">
+                                <p><strong>Slot:</strong> Floor {selectedBookingForQR.floorNumber} - Slot {selectedBookingForQR.slotNumber}</p>
+                                <p><strong>Booking Time:</strong> {new Date(selectedBookingForQR.bookedAt).toLocaleTimeString()}</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

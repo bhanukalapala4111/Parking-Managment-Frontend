@@ -12,11 +12,15 @@ const AdminPanel = () => {
     const [activeCreateTab, setActiveCreateTab] = useState('user');
     const [loading, setLoading] = useState(false);
 
+    // QR Code Verification
+    const [scanData, setScanData] = useState('');
+    const [scanResult, setScanResult] = useState(null);
+
     // Create User Form
     const [userName, setUserName] = useState('');
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [company, setCompany] = useState('');
+    const [companyId, setCompanyId] = useState('');
     const [role, setRole] = useState('EMPLOYEE');
 
     // Create Company Form
@@ -63,20 +67,21 @@ const AdminPanel = () => {
 
     const handleCreateUser = async (e) => {
         e.preventDefault();
-        if (!userName || !email || !password || !company) {
+        if (!userName || !email || !password || !companyId) {
             toast.error('Please fill in all fields');
             return;
         }
 
         setLoading(true);
         try {
-            await authService.createUser({ userName, email, password, company, role });
+            await authService.createUser({ userName, email, password, companyId: Number(companyId), role });
             toast.success('User created successfully!');
             setUserName('');
             setEmail('');
             setPassword('');
-            setCompany('');
+            setCompanyId('');
             setRole('EMPLOYEE');
+            loadViewData();
         } catch (error) {
             toast.error(error.response?.data?.message || 'Failed to create user');
         } finally {
@@ -140,7 +145,12 @@ const AdminPanel = () => {
         setLoading(true);
         try {
             if (editingItem.type === 'user') {
-                await userService.updateUser(editingItem.data.id, editForm);
+                const updateData = {
+                    ...editForm,
+                    companyId: Number(editForm.companyId || editForm.company)
+                };
+                delete updateData.company;
+                await userService.updateUser(editingItem.data.id, updateData);
             } else if (editingItem.type === 'company') {
                 await companyService.updateCompany(editingItem.data.id, editForm);
             } else if (editingItem.type === 'floor') {
@@ -156,6 +166,26 @@ const AdminPanel = () => {
             loadViewData();
         } catch (error) {
             toast.error(error.response?.data?.message || `Failed to update ${editingItem.type}`);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const handleDelete = async () => {
+        if (!window.confirm(`Are you sure you want to delete this ${editingItem.type}?`)) {
+            return;
+        }
+
+        setLoading(true);
+        try {
+            if (editingItem.type === 'user') {
+                await userService.deleteUser(editingItem.data.id);
+            }
+            toast.success(`${editingItem.type.charAt(0).toUpperCase() + editingItem.type.slice(1)} deleted successfully!`);
+            setIsEditing(false);
+            loadViewData();
+        } catch (error) {
+            toast.error(error.response?.data?.message || `Failed to delete ${editingItem.type}`);
         } finally {
             setLoading(false);
         }
@@ -194,6 +224,16 @@ const AdminPanel = () => {
                     onClick={() => setActiveTab('view')}
                 >
                     View All
+                </button>
+                <button
+                    className={`tab ${activeTab === 'verify' ? 'active' : ''}`}
+                    onClick={() => {
+                        setActiveTab('verify');
+                        setScanResult(null);
+                        setScanData('');
+                    }}
+                >
+                    Verify Pass
                 </button>
             </div>
 
@@ -271,14 +311,17 @@ const AdminPanel = () => {
                                             </div>
                                             <div className="input-group">
                                                 <label className="input-label">Company</label>
-                                                <input
-                                                    type="text"
+                                                <select
                                                     className="input-field"
-                                                    placeholder="Enter company name"
-                                                    value={company}
-                                                    onChange={(e) => setCompany(e.target.value)}
+                                                    value={companyId}
+                                                    onChange={(e) => setCompanyId(e.target.value)}
                                                     disabled={loading}
-                                                />
+                                                >
+                                                    <option value="">Select Company</option>
+                                                    {companies.map(c => (
+                                                        <option key={c.id} value={c.id}>{c.companyName}</option>
+                                                    ))}
+                                                </select>
                                             </div>
                                         </div>
                                         <div className="input-group">
@@ -290,6 +333,7 @@ const AdminPanel = () => {
                                                 disabled={loading}
                                             >
                                                 <option value="EMPLOYEE">EMPLOYEE</option>
+                                                <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
                                                 <option value="ADMIN">ADMIN</option>
                                             </select>
                                         </div>
@@ -474,7 +518,9 @@ const AdminPanel = () => {
                                                     <td>{user.id}</td>
                                                     <td>{user.userName}</td>
                                                     <td>{user.email}</td>
-                                                    <td>{user.company}</td>
+                                                    <td>
+                                                        {companies.find(c => c.id === Number(user.company))?.companyName || user.company || 'N/A'}
+                                                    </td>
                                                     <td>
                                                         <span className={`badge ${user.role === 'ADMIN' ? 'badge-admin' : 'badge-employee'}`}>
                                                             {user.role}
@@ -623,6 +669,69 @@ const AdminPanel = () => {
                 </div>
             )}
 
+            {activeTab === 'verify' && (
+                <div className="verify-section">
+                    <div className="glass-card card mb-lg" style={{ maxWidth: '600px', margin: '0 auto' }}>
+                        <div className="card-header">
+                            <h3 className="card-title">📷 Verify Gate Pass (QR Code)</h3>
+                        </div>
+                        <div className="p-md">
+                            <p className="mb-md text-muted">Use a connected QR scanner to scan the pass, or paste the payload below.</p>
+                            <div className="input-group">
+                                <textarea
+                                    className="input-field"
+                                    placeholder='{"type": "PARKING_PASS", "bookingId": "..."}'
+                                    rows="5"
+                                    value={scanData}
+                                    onChange={(e) => setScanData(e.target.value)}
+                                ></textarea>
+                            </div>
+                            <button
+                                className="btn btn-primary w-full"
+                                onClick={() => {
+                                    try {
+                                        const parsed = JSON.parse(scanData);
+                                        if (parsed.type === 'PARKING_PASS' && parsed.bookingId && parsed.userId) {
+                                            setScanResult({
+                                                valid: true,
+                                                message: 'Pass is VALID!',
+                                                details: parsed
+                                            });
+                                        } else {
+                                            throw new Error("Invalid payload format");
+                                        }
+                                    } catch (e) {
+                                        setScanResult({
+                                            valid: false,
+                                            message: 'Pass is INVALID.',
+                                            error: e.message
+                                        });
+                                    }
+                                }}
+                            >
+                                Verify QR Data
+                            </button>
+
+                            {scanResult && (
+                                <div className={`mt-md p-md glass-card`} style={{ border: `2px solid ${scanResult.valid ? 'var(--success)' : 'var(--danger)'}`, backgroundColor: scanResult.valid ? '#e6ffe6' : '#ffe6e6' }}>
+                                    <h4 style={{ color: scanResult.valid ? 'var(--success)' : 'var(--danger)' }}>
+                                        {scanResult.valid ? '✅ ' : '❌ '}{scanResult.message}
+                                    </h4>
+                                    {scanResult.valid && scanResult.details && (
+                                        <div className="mt-sm" style={{ textAlign: 'left', fontSize: '14px', color: '#333' }}>
+                                            <p><strong>Booking ID:</strong> {scanResult.details.bookingId}</p>
+                                            <p><strong>User ID:</strong> {scanResult.details.userId}</p>
+                                            <p><strong>Slot ID:</strong> {scanResult.details.slotId}</p>
+                                            <p><strong>Generated At:</strong> {new Date(scanResult.details.validAt).toLocaleString()}</p>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {/* Edit Modal */}
             {isEditing && (
                 <div className="modal-overlay">
@@ -662,18 +771,23 @@ const AdminPanel = () => {
                                             onChange={(e) => setEditForm({ ...editForm, role: e.target.value })}
                                         >
                                             <option value="EMPLOYEE">EMPLOYEE</option>
+                                            <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
                                             <option value="ADMIN">ADMIN</option>
                                         </select>
                                     </div>
                                     <div className="input-group">
                                         <label className="input-label">Company</label>
-                                        <input
-                                            type="text"
+                                        <select
                                             className="input-field"
-                                            value={editForm.company}
-                                            onChange={(e) => setEditForm({ ...editForm, company: e.target.value })}
+                                            value={editForm.companyId || editForm.company}
+                                            onChange={(e) => setEditForm({ ...editForm, companyId: e.target.value })}
                                             required
-                                        />
+                                        >
+                                            <option value="">Select Company</option>
+                                            {companies.map(c => (
+                                                <option key={c.id} value={c.id}>{c.companyName}</option>
+                                            ))}
+                                        </select>
                                     </div>
                                 </>
                             )}
@@ -739,6 +853,17 @@ const AdminPanel = () => {
                                 <button type="submit" className="btn btn-primary flex-1" disabled={loading}>
                                     {loading ? 'Updating...' : 'Save Changes'}
                                 </button>
+                                {editingItem.type === 'user' && (
+                                    <button
+                                        type="button"
+                                        className="btn btn-danger"
+                                        onClick={handleDelete}
+                                        disabled={loading}
+                                        style={{ backgroundColor: 'var(--danger)', color: 'white' }}
+                                    >
+                                        Delete User
+                                    </button>
+                                )}
                                 <button type="button" className="btn btn-secondary" onClick={() => setIsEditing(false)}>
                                     Cancel
                                 </button>
