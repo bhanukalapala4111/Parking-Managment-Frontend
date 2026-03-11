@@ -48,14 +48,21 @@ export const slotService = {
         const response = await api.get(`/slot/company/${companyId}`);
         console.log('slotService: Company slots response:', response.data);
         return response.data.map(item => {
-            const slot = item.slot || item; // Robust handle for nested/flat
+            const slot = item.slot || item;
+            const booking = item.booking || {};
+
+            // Map vehicle type to user-friendly label
+            let vType = slot.vehicleType || booking.vehicleType || 'N/A';
+            if (vType === 'CAR') vType = 'Four Wheeler';
+            else if (vType === 'BIKE') vType = 'Two Wheeler';
+
             return {
                 id: slot.id,
                 floorNumber: slot.parkingFloor?.floorNumber || slot.floorNumber || 'N/A',
                 slotNumber: slot.slotNumber,
                 status: slot.status,
-                bookedByUserId: slot.occupantUserId || slot.userId || slot.bookedByUserId,
-                vehicleType: slot.vehicleType || 'N/A'
+                bookedByUserId: slot.occupantUserId || slot.userId || booking.userId || slot.bookedByUserId,
+                vehicleType: vType
             };
         });
     },

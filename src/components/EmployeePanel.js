@@ -22,8 +22,7 @@ const EmployeePanel = () => {
     const [showQRModal, setShowQRModal] = useState(false);
     const [selectedBookingForQR, setSelectedBookingForQR] = useState(null);
 
-    // Release Slot Form
-    const [slotId, setSlotId] = useState('');
+
 
     const loadBookings = useCallback(async (explicitId) => {
         const storedUser = JSON.parse(localStorage.getItem('user') || '{}');
@@ -115,22 +114,20 @@ const EmployeePanel = () => {
         }
     };
 
-    const handleReleaseSlot = async (e) => {
-        e.preventDefault();
-        if (!slotId) {
-            toast.error('Please enter slot ID');
+    const handleReleaseSlot = async (targetSlotId) => {
+        if (!targetSlotId) {
+            toast.error('Invalid slot ID');
             return;
         }
 
-        if (!window.confirm(`Are you sure you want to release slot ID ${slotId}?`)) {
+        if (!window.confirm(`Are you sure you want to release slot ID ${targetSlotId}?`)) {
             return;
         }
 
         setLoading(true);
         try {
-            await slotService.releaseSlot(slotId);
+            await slotService.releaseSlot(targetSlotId);
             toast.success('Slot released successfully!');
-            setSlotId('');
             loadBookings();
             loadHistory();
         } catch (error) {
@@ -153,9 +150,9 @@ const EmployeePanel = () => {
                 </div>
             </div>
 
-            <div className="grid grid-2 mb-lg">
-                {/* Book Slot */}
-                <div className="glass-card card">
+            <div className="mb-lg" style={{ display: 'flex', justifyContent: 'flex-start' }}>
+                {/* Book Slot - Reduced width and left aligned */}
+                <div className="glass-card card" style={{ maxWidth: '400px', width: '100%', margin: '0' }}>
                     <div className="card-header">
                         <h3 className="card-title">🅿️ Book Parking Slot</h3>
                     </div>
@@ -174,29 +171,6 @@ const EmployeePanel = () => {
                         </div>
                         <button type="submit" className="btn btn-success w-full" disabled={loading}>
                             {loading ? 'Booking...' : 'Book Slot'}
-                        </button>
-                    </form>
-                </div>
-
-                {/* Release Slot */}
-                <div className="glass-card card">
-                    <div className="card-header">
-                        <h3 className="card-title">🚗 Release Parking Slot</h3>
-                    </div>
-                    <form onSubmit={handleReleaseSlot}>
-                        <div className="input-group">
-                            <label className="input-label">Slot ID</label>
-                            <input
-                                type="number"
-                                className="input-field"
-                                placeholder="Enter slot ID to release"
-                                value={slotId}
-                                onChange={(e) => setSlotId(e.target.value)}
-                                disabled={loading}
-                            />
-                        </div>
-                        <button type="submit" className="btn btn-danger w-full" disabled={loading}>
-                            {loading ? 'Releasing...' : 'Release Slot'}
                         </button>
                     </form>
                 </div>
@@ -224,6 +198,7 @@ const EmployeePanel = () => {
                                         <th>Slot Number</th>
                                         <th>Booked At</th>
                                         <th>Status</th>
+                                        <th>Actions</th>
                                     </tr>
                                 </thead>
                                 <tbody>
@@ -251,6 +226,15 @@ const EmployeePanel = () => {
                                             <td>{new Date(booking.bookedAt).toLocaleString()}</td>
                                             <td>
                                                 <span className="badge badge-employee">{booking.status}</span>
+                                            </td>
+                                            <td>
+                                                <button
+                                                    className="btn btn-sm btn-danger"
+                                                    onClick={() => handleReleaseSlot(booking.slotId || booking.id)}
+                                                    disabled={loading}
+                                                >
+                                                    Release
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}

@@ -254,7 +254,6 @@ const CompanyPanel = () => {
                                     <tr>
                                         <th>Floor</th>
                                         <th>Slot #</th>
-                                        <th>Type</th>
                                         <th>Status</th>
                                         <th>Actions</th>
                                     </tr>
@@ -271,7 +270,6 @@ const CompanyPanel = () => {
                                             <tr key={s.id}>
                                                 <td>Floor {s.floorNumber}</td>
                                                 <td>{s.slotNumber}</td>
-                                                <td>{s.vehicleType}</td>
                                                 <td>
                                                     <span className={`badge ${s.status === 'AVAILABLE' ? 'badge-success' : 'badge-danger'}`}>
                                                         {s.status}
@@ -347,6 +345,17 @@ const CompanyPanel = () => {
                                     />
                                 </div>
                             )}
+                            <div className="input-group">
+                                <label className="input-label">Role</label>
+                                <select
+                                    className="input-field"
+                                    value={formData.role}
+                                    onChange={(e) => setFormData({ ...formData, role: e.target.value })}
+                                >
+                                    <option value="EMPLOYEE">EMPLOYEE</option>
+                                    <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
+                                </select>
+                            </div>
                             <div className="flex gap-md mt-lg">
                                 <button type="submit" className="btn btn-primary flex-1" disabled={loading}>
                                     {loading ? 'Saving...' : 'Save User'}

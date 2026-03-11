@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
+import jsQR from "jsqr";
 import { authService } from '../services/authService';
 import { companyService } from '../services/companyService';
 import { parkingService } from '../services/parkingService';
@@ -15,6 +16,37 @@ const AdminPanel = () => {
     // QR Code Verification
     const [scanData, setScanData] = useState('');
     const [scanResult, setScanResult] = useState(null);
+    const [uploadingQR, setUploadingQR] = useState(false);
+
+    const handleFileUpload = (e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        setUploadingQR(true);
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const image = new Image();
+            image.onload = () => {
+                const canvas = document.createElement('canvas');
+                const context = canvas.getContext('2d');
+                canvas.width = image.width;
+                canvas.height = image.height;
+                context.drawImage(image, 0, 0, image.width, image.height);
+                const imageData = context.getImageData(0, 0, image.width, image.height);
+                const code = jsQR(imageData.data, imageData.width, imageData.height);
+
+                if (code) {
+                    setScanData(code.data);
+                    toast.success("QR Code detected successfully!");
+                } else {
+                    toast.error("No QR code found in the image.");
+                }
+                setUploadingQR(false);
+            };
+            image.src = event.target.result;
+        };
+        reader.readAsDataURL(file);
+    };
 
     // Create User Form
     const [userName, setUserName] = useState('');
@@ -334,7 +366,6 @@ const AdminPanel = () => {
                                             >
                                                 <option value="EMPLOYEE">EMPLOYEE</option>
                                                 <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
-                                                <option value="ADMIN">ADMIN</option>
                                             </select>
                                         </div>
                                         <button type="submit" className="btn btn-primary w-full" disabled={loading}>
@@ -505,14 +536,18 @@ const AdminPanel = () => {
                                     </thead>
                                     <tbody>
                                         {users.filter(u =>
-                                            (u.userName && String(u.userName).toLowerCase().includes(searchTerm.toLowerCase())) ||
-                                            (u.email && String(u.email).toLowerCase().includes(searchTerm.toLowerCase())) ||
-                                            (u.company && String(u.company).toLowerCase().includes(searchTerm.toLowerCase()))
-                                        ).length > 0 ? (
-                                            users.filter(u =>
+                                            u.role !== 'ADMIN' && (
                                                 (u.userName && String(u.userName).toLowerCase().includes(searchTerm.toLowerCase())) ||
                                                 (u.email && String(u.email).toLowerCase().includes(searchTerm.toLowerCase())) ||
                                                 (u.company && String(u.company).toLowerCase().includes(searchTerm.toLowerCase()))
+                                            )
+                                        ).length > 0 ? (
+                                            users.filter(u =>
+                                                u.role !== 'ADMIN' && (
+                                                    (u.userName && String(u.userName).toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                    (u.email && String(u.email).toLowerCase().includes(searchTerm.toLowerCase())) ||
+                                                    (u.company && String(u.company).toLowerCase().includes(searchTerm.toLowerCase()))
+                                                )
                                             ).map((user) => (
                                                 <tr key={user.id}>
                                                     <td>{user.id}</td>
@@ -676,7 +711,21 @@ const AdminPanel = () => {
                             <h3 className="card-title">📷 Verify Gate Pass (QR Code)</h3>
                         </div>
                         <div className="p-md">
-                            <p className="mb-md text-muted">Use a connected QR scanner to scan the pass, or paste the payload below.</p>
+                            <p className="mb-md text-muted">Use a connected QR scanner to scan the pass, or upload an image/paste the payload below.</p>
+
+                            <div className="upload-section mb-md p-sm glass-card" style={{ textAlign: 'center', border: '2px dashed var(--primary-light)' }}>
+                                <label className="btn btn-secondary" style={{ cursor: 'pointer' }}>
+                                    {uploadingQR ? '⌛ Processing...' : '📁 Upload QR Image'}
+                                    <input
+                                        type="file"
+                                        accept="image/*"
+                                        style={{ display: 'none' }}
+                                        onChange={handleFileUpload}
+                                        disabled={uploadingQR}
+                                    />
+                                </label>
+                            </div>
+
                             <div className="input-group">
                                 <textarea
                                     className="input-field"
@@ -721,8 +770,8 @@ const AdminPanel = () => {
                                         <div className="mt-sm" style={{ textAlign: 'left', fontSize: '14px', color: '#333' }}>
                                             <p><strong>Booking ID:</strong> {scanResult.details.bookingId}</p>
                                             <p><strong>User ID:</strong> {scanResult.details.userId}</p>
-                                            <p><strong>Slot ID:</strong> {scanResult.details.slotId}</p>
-                                            <p><strong>Generated At:</strong> {new Date(scanResult.details.validAt).toLocaleString()}</p>
+                                            <p><strong>Slot ID:</strong> {scanResult.details.slotNumber}</p>
+                                            <p><strong>Generated At:</strong> {new Date(scanResult.details.bookedAt).toLocaleString()}</p>
                                         </div>
                                     )}
                                 </div>
@@ -772,7 +821,6 @@ const AdminPanel = () => {
                                         >
                                             <option value="EMPLOYEE">EMPLOYEE</option>
                                             <option value="COMPANY_ADMIN">COMPANY_ADMIN</option>
-                                            <option value="ADMIN">ADMIN</option>
                                         </select>
                                     </div>
                                     <div className="input-group">
