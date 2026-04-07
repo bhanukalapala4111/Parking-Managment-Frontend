@@ -6,6 +6,9 @@ import { AuthProvider } from './context/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Dashboard from './components/Dashboard';
+import ThreeDScene from './components/ThreeDScene';
+import MeetingRoom from './components/MeetingRoom';
+import ConferenceRoom from './components/ConferenceRoom';
 
 function App() {
   return (
@@ -13,6 +16,9 @@ function App() {
       <Router>
         <Routes>
           <Route path="/" element={<Login />} />
+          <Route path="/six-seater-cabin" element={<ThreeDScene />} />
+          <Route path="/meeting-room" element={<MeetingRoom />} />
+          <Route path="/conference-room" element={<ConferenceRoom />} />
           <Route
             path="/dashboard"
             element={
